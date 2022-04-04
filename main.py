@@ -165,6 +165,7 @@ def lookalike(faceDetector, shapePredictor, faceRecognizer):
                 plt.imshow(img_cele)
                 plt.title("Celeb Look-Alike={}".format(celeb_name))
                 plt.show()
+            break
             
 
 
