@@ -3,6 +3,7 @@ import glob
 import dlib
 import cv2
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 # Set up the the faceDetector, shapePredictor and faceRecognizer to
@@ -13,6 +14,7 @@ faceRecognizer = dlib.face_recognition_model_v1(
     "dlib_face_recognition_resnet_model_v1.dat"
 )
 
+mpl.use('tkagg')
 
 def inrole_data(faceDetector, shapePredictor, faceRecognizer):
     """This function creates a face descriptors of (1x128) for each face
@@ -91,62 +93,83 @@ def lookalike(faceDetector, shapePredictor, faceRecognizer):
     index = np.load("index.npy", allow_pickle="TRUE").item()
 
     # read image
-    testImages = glob.glob("images/*.jpg")
+    #testImages = glob.glob("images/*.jpg")
 
     # loop though the images folder
-    for image in testImages:
+    # for image in testImages:
         # read the image and convert to Dlib format
-        im = cv2.imread(image)
-        imDli = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
-        # detect faces
-        faces = faceDetector(imDli)
+    cv2.namedWindow("preview")
+    cam = cv2.VideoCapture(0)
 
-        # create descriptor and index for each image
-        for face in faces:
-            shape = shapePredictor(imDli, face)
+    if cam.isOpened(): # try to get the first frame
+        result, image = cam.read()
+    else:
+        result = False
 
-            faceDescriptor = faceRecognizer.compute_face_descriptor(im, shape)
+    while result:
+        cv2.imshow("preview", image)
+        result, image = cam.read()
+        key = cv2.waitKey(20)
+        if key == 27: # exit on ESC
+            cam.release()
+            cv2.destroyWindow("preview")
+            break
+        elif key == 13:
+            cv2.destroyWindow("preview")
+            if result:
+                imDli = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            faceDescriptorList = [x for x in faceDescriptor]
-            faceDescriptorNdarray = np.asarray(faceDescriptorList, dtype=np.float64)
-            faceDescriptorNdarray = faceDescriptorNdarray[np.newaxis, :]
+                # detect faces
+                faces = faceDetector(imDli)
 
-            # calculate the distances of the new face wiht face descriptors of celebrities
-            distances = np.linalg.norm(faceDescriptors - faceDescriptorNdarray, axis=1)
-            argmin = np.argmin(distances)
-            minDistance = distances[argmin]
+                # create descriptor and index for each image
+                for face in faces:
+                    shape = shapePredictor(imDli, face)
 
-            # find an acceptable lookalike
-            if minDistance <= 0.8:
-                label = index[argmin]
-            else:
-                label = "unknown"
+                    faceDescriptor = faceRecognizer.compute_face_descriptor(image, shape)
 
-            celeb_name = label
+                    faceDescriptorList = [x for x in faceDescriptor]
+                    faceDescriptorNdarray = np.asarray(faceDescriptorList, dtype=np.float64)
+                    faceDescriptorNdarray = faceDescriptorNdarray[np.newaxis, :]
 
-            # load celebrity images from celeb_mini folder
-            for images in os.listdir("celeb_mini"):
-                imagefiles = os.listdir(os.path.join("celeb_mini", images))
+                    # calculate the distances of the new face wiht face descriptors of celebrities
+                    distances = np.linalg.norm(faceDescriptors - faceDescriptorNdarray, axis=1)
+                    argmin = np.argmin(distances)
+                    minDistance = distances[argmin]
 
-                if (
-                    np.load("celeb_mapping.npy", allow_pickle=True).item()[images]
-                    == celeb_name
-                ):
-                    for image in imagefiles:
-                        img_cele = cv2.imread(os.path.join("celeb_mini", images, image))
-                        img_cele = cv2.cvtColor(img_cele, cv2.COLOR_BGR2RGB)
-                        break
+                    # find an acceptable lookalike
+                    if minDistance <= 0.8:
+                        label = index[argmin]
+                    else:
+                        label = "unknown"
 
-        # show images one at a time
-        plt.subplot(121)
-        plt.imshow(imDli)
-        plt.title("test img")
+                    celeb_name = label
 
-        plt.subplot(122)
-        plt.imshow(img_cele)
-        plt.title("Celeb Look-Alike={}".format(celeb_name))
-        plt.show()
+                    # load celebrity images from celeb_mini folder
+                    for images in os.listdir("celeb_mini"):
+                        imagefiles = os.listdir(os.path.join("celeb_mini", images))
+
+                        if (
+                            np.load("celeb_mapping.npy", allow_pickle=True).item()[images]
+                            == celeb_name
+                        ):
+                            for im in imagefiles:
+                                img_cele = cv2.imread(os.path.join("celeb_mini", images, im))
+                                img_cele = cv2.cvtColor(img_cele, cv2.COLOR_BGR2RGB)
+                                break
+
+                # show images one at a time
+                plt.subplot(121)
+                plt.imshow(imDli)
+                plt.title("test img")
+
+                plt.subplot(122)
+                plt.imshow(img_cele)
+                plt.title("Celeb Look-Alike={}".format(celeb_name))
+                plt.show()
+            break
+            
 
 
 def main():
