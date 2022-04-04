@@ -3,6 +3,7 @@ import glob
 import dlib
 import cv2
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 # Set up the the faceDetector, shapePredictor and faceRecognizer to
@@ -13,6 +14,7 @@ faceRecognizer = dlib.face_recognition_model_v1(
     "dlib_face_recognition_resnet_model_v1.dat"
 )
 
+mpl.use('tkagg')
 
 def inrole_data(faceDetector, shapePredictor, faceRecognizer):
     """This function creates a face descriptors of (1x128) for each face
@@ -110,9 +112,10 @@ def lookalike(faceDetector, shapePredictor, faceRecognizer):
         result, image = cam.read()
         key = cv2.waitKey(20)
         if key == 27: # exit on ESC
+            cam.release()
+            cv2.destroyWindow("preview")
             break
         elif key == 13:
-            cam.release()
             cv2.destroyWindow("preview")
             if result:
                 imDli = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -151,8 +154,8 @@ def lookalike(faceDetector, shapePredictor, faceRecognizer):
                             np.load("celeb_mapping.npy", allow_pickle=True).item()[images]
                             == celeb_name
                         ):
-                            for image in imagefiles:
-                                img_cele = cv2.imread(os.path.join("celeb_mini", images, image))
+                            for im in imagefiles:
+                                img_cele = cv2.imread(os.path.join("celeb_mini", images, im))
                                 img_cele = cv2.cvtColor(img_cele, cv2.COLOR_BGR2RGB)
                                 break
 
