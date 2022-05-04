@@ -98,8 +98,8 @@ FRAME_H = 200
 
 # Default Pan/Tilt for the camera in degrees. I have set it up to roughly point at my face location when it starts the code.
 # Camera range is from 0 to 180. Alter the values below to determine the starting point for your pan and tilt.
-cam_pan = 40
-cam_tilt = 20
+cam_pan = 90
+cam_tilt = 70
 
 # Set up the Cascade Classifier for face tracking. This is using the Haar Cascade face recognition method with LBP = Local Binary Patterns. 
 # Seen below is commented out the slower method to get face tracking done using only the HAAR method.
@@ -205,11 +205,10 @@ while True:
     # Display the video captured, with rectangles overlayed
     # onto the Pi desktop 
     cv2.imshow('Video', frame)
-
-    #If you type q at any point this will end the loop and thus end the code.
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
     key = cv2.waitKey(20)
+    #If you type q at any point this will end the loop and thus end the code.
+    if key & 0xFF == ord('q'):
+        break
     if key == 13:
         cv2.destroyWindow("Video")
         if ret:
@@ -253,18 +252,19 @@ while True:
                             img_cele = cv2.imread(os.path.join("celeb_mini", images, im))
                             img_cele = cv2.cvtColor(img_cele, cv2.COLOR_BGR2RGB)
                             break
+            if len(faces) > 0:
+                 # show images one at a time
+                plt.subplot(121)
+                plt.imshow(imDli)
+                plt.title("test img")
 
-            # show images one at a time
-            plt.subplot(121)
-            plt.imshow(imDli)
-            plt.title("test img")
-
-            plt.subplot(122)
-            plt.imshow(img_cele)
-            plt.title("Celeb Look-Alike={}".format(celeb_name))
-            plt.show()
+                plt.subplot(122)
+                plt.imshow(img_cele)
+                plt.title("Celeb Look-Alike={}".format(celeb_name))
+                plt.show()
+            else:
+                print("No face detected")
             break
 
 # When everything is done, release the capture information and stop everything
-video_capture.release()
 cv2.destroyAllWindows()
